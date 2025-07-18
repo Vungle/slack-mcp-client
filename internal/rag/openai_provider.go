@@ -15,15 +15,15 @@ import (
 
 // OpenAIConfig holds configuration for the OpenAI provider
 type OpenAIConfig struct {
-	APIKey               string
-	VectorStoreID        string  // Optional: reuse existing vector store
-	VectorStoreName      string  // Name for the vector store (default: "Knowledge Base")
-	MaxResults           int64   // Default: 20
-	ScoreThreshold       float64 // Default: 0.5
-	VectorStoreNameRegex string  // Regex for the vector store name
-	RewriteQuery         bool    // Whether to rewrite the query
-	VsMetadataKey        string  // Key for the vector store metadata
-	VsMetadataValue      string  // Value for the vector store metadata
+	APIKey                   string
+	VectorStoreID            string  // Optional: reuse existing vector store
+	VectorStoreName          string  // Name for the vector store (default: "Knowledge Base")
+	MaxResults               int64   // Default: 20
+	ScoreThreshold           float64 // Default: 0.5
+	VectorStoreNameRegex     string  // Regex for the vector store name
+	RewriteQuery             bool    // Whether to rewrite the query
+	VectorStoreMetadataKey   string  // Key for the vector store metadata
+	VectorStoreMetadataValue string  // Value for the vector store metadata
 }
 
 // OpenAIProvider implements VectorProvider using OpenAI's VectorStore API with 2025 updates
@@ -83,11 +83,15 @@ func NewOpenAIProvider(config map[string]interface{}) (VectorProvider, error) {
 	}
 
 	if vsMetadataKey, ok := config["vs_metadata_key"].(string); ok {
-		cfg.VsMetadataKey = vsMetadataKey
+		cfg.VectorStoreMetadataKey = vsMetadataKey
+	} else {
+		cfg.VectorStoreMetadataKey = ""
 	}
 
 	if vsMetadataValue, ok := config["vs_metadata_value"].(string); ok {
-		cfg.VsMetadataValue = vsMetadataValue
+		cfg.VectorStoreMetadataValue = vsMetadataValue
+	} else {
+		cfg.VectorStoreMetadataValue = ""
 	}
 
 	// Create OpenAI client
@@ -274,7 +278,7 @@ func (o *OpenAIProvider) Search(ctx context.Context, query string, options Searc
 				return nil, fmt.Errorf("invalid vector store name regex: %w", err)
 			}
 			for _, vs := range vectorStores.Data {
-				if re.MatchString(vs.Name) && vs.Metadata[o.config.VsMetadataKey] == o.config.VsMetadataValue {
+				if re.MatchString(vs.Name) && vs.Metadata[o.config.VectorStoreMetadataKey] == o.config.VectorStoreMetadataValue {
 					o.vectorStoreID = vs.ID
 					fmt.Printf("[RAG] OpenAI: Found vector store '%s' with ID: %s\n", vs.Name, o.vectorStoreID)
 					break
